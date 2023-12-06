@@ -12,92 +12,76 @@ namespace AdventOfCode2023
         {
             var lines = File.ReadAllLines(@"C:\temp\AOC2023\Input05.txt").ToList();
             var seeds = lines[0].Replace("seeds: ", "").Split(" ").Select(s => Int64.Parse(s)).ToList();
-
-            //Seed To Soil map
-            var counter = 3;
-            var seedToSoil = new List<ItemRange>();
-            counter = ExtractData(lines, counter, seedToSoil);
-
-            counter += 2;
-            var soilToFertilizer = new List<ItemRange>();
-            counter = ExtractData(lines, counter, soilToFertilizer);
-
-            counter += 2;
-            var fertilizerToWater = new List<ItemRange>();
-            counter = ExtractData(lines, counter, fertilizerToWater);
-
-            counter += 2;
-            var waterToLight = new List<ItemRange>();
-            counter = ExtractData(lines, counter, waterToLight);
-
-            counter += 2;
-            var lightToTemp = new List<ItemRange>();
-            counter = ExtractData(lines, counter, lightToTemp);
-
-            counter += 2;
-            var tempToHumidity = new List<ItemRange>();
-            counter = ExtractData(lines, counter, tempToHumidity);
-
-            counter += 2;
-            var humidityToLocation = new List<ItemRange>();
-            counter = ExtractData(lines, counter, humidityToLocation);
+            List<ItemRange> seedToSoil, soilToFertilizer, fertilizerToWater, waterToLight, lightToTemp, tempToHumidity, humidityToLocation;
+            GetItemRanges(lines, out seedToSoil, out soilToFertilizer, out fertilizerToWater, out waterToLight, out lightToTemp, out tempToHumidity, out humidityToLocation);
 
             var locations = new List<Int64>();
 
             foreach (var seed in seeds)
             {
-                var soil = seed;
-                var soilRange = seedToSoil.FirstOrDefault(s => s.Source <= seed && s.Source + s.Length > seed);
-                if (soilRange != null)
-                {
-                    soil = soilRange.Destination + (seed - soilRange.Source);
-                }
-
-                var fert = soil;
-                var fertRange = soilToFertilizer.FirstOrDefault(s => s.Source <= soil && s.Source + s.Length > soil);
-                if (fertRange != null)
-                {
-                    fert = fertRange.Destination + (soil - fertRange.Source);
-                }
-
-                var water = fert;
-                var waterRange = fertilizerToWater.FirstOrDefault(s => s.Source <= fert && s.Source + s.Length > fert);
-                if (waterRange != null)
-                {
-                    water = waterRange.Destination + (fert - waterRange.Source);
-                }
-
-                var light = water;
-                var lightRange = waterToLight.FirstOrDefault(s => s.Source <= water && s.Source + s.Length > water);
-                if (lightRange != null)
-                {
-                    light = lightRange.Destination + (water - lightRange.Source);
-                }
-
-                var temp = light;
-                var tempRange = lightToTemp.FirstOrDefault(s => s.Source <= light && s.Source + s.Length > light);
-                if (tempRange != null)
-                {
-                    temp = tempRange.Destination + (light - tempRange.Source);
-                }
-
-                var hum = temp;
-                var humRange = tempToHumidity.FirstOrDefault(s => s.Source <= temp && s.Source + s.Length > temp);
-                if (humRange != null)
-                {
-                    hum = humRange.Destination + (temp - humRange.Source);
-                }
-
-                var location = hum;
-                var locRange = humidityToLocation.FirstOrDefault(s => s.Source <= hum && s.Source + s.Length > hum);
-                if (locRange != null)
-                {
-                    location = locRange.Destination + (hum - locRange.Source);
-                }
-
+                var location = GetLocation(seedToSoil, soilToFertilizer, fertilizerToWater, waterToLight, lightToTemp, tempToHumidity, humidityToLocation, seed);
                 locations.Add(location);
             }
             Console.WriteLine(locations.Min());
+        }
+
+        public static void Part2()
+        {
+            var lines = File.ReadAllLines(@"C:\temp\AOC2023\Input05.txt").ToList();
+            var seedRanges = lines[0].Replace("seeds: ", "").Split(" ").Select(s => Int64.Parse(s)).ToList();
+            var seeds = new List<Tuple<Int64, Int64>>();
+            for (int i = 0; i < seedRanges.Count - 1; i += 2)
+            {
+                seeds.Add(new Tuple<long, long>(seedRanges[i], seedRanges[i + 1]));
+            }
+
+            List<ItemRange> seedToSoil, soilToFertilizer, fertilizerToWater, waterToLight, lightToTemp, tempToHumidity, humidityToLocation;
+            GetItemRanges(lines, out seedToSoil, out soilToFertilizer, out fertilizerToWater, out waterToLight, out lightToTemp, out tempToHumidity, out humidityToLocation);
+
+            var locationResult = Int64.MaxValue;
+
+            foreach (var seedPair in seeds)
+            {
+
+                var location = CalculateRange(seedToSoil, soilToFertilizer, fertilizerToWater, waterToLight, lightToTemp, tempToHumidity, humidityToLocation, seedPair);
+                if (locationResult > location)
+                {
+                    locationResult = location;
+                }
+            }
+
+            Console.WriteLine(locationResult);
+        }
+
+        private static void GetItemRanges(List<string> lines, out List<ItemRange> seedToSoil, out List<ItemRange> soilToFertilizer, out List<ItemRange> fertilizerToWater, out List<ItemRange> waterToLight, out List<ItemRange> lightToTemp, out List<ItemRange> tempToHumidity, out List<ItemRange> humidityToLocation)
+        {
+            var counter = 3;
+            seedToSoil = new List<ItemRange>();
+            counter = ExtractData(lines, counter, seedToSoil);
+
+            counter += 2;
+            soilToFertilizer = new List<ItemRange>();
+            counter = ExtractData(lines, counter, soilToFertilizer);
+
+            counter += 2;
+            fertilizerToWater = new List<ItemRange>();
+            counter = ExtractData(lines, counter, fertilizerToWater);
+
+            counter += 2;
+            waterToLight = new List<ItemRange>();
+            counter = ExtractData(lines, counter, waterToLight);
+
+            counter += 2;
+            lightToTemp = new List<ItemRange>();
+            counter = ExtractData(lines, counter, lightToTemp);
+
+            counter += 2;
+            tempToHumidity = new List<ItemRange>();
+            counter = ExtractData(lines, counter, tempToHumidity);
+
+            counter += 2;
+            humidityToLocation = new List<ItemRange>();
+            counter = ExtractData(lines, counter, humidityToLocation);
         }
 
         private static int ExtractData(List<string> lines, int counter, List<ItemRange> itemRanges)
@@ -113,60 +97,6 @@ namespace AdventOfCode2023
             }
 
             return counter;
-        }
-
-        public static void Part2()
-        {
-            var lines = File.ReadAllLines(@"C:\temp\AOC2023\Input05.txt").ToList();
-            var seedRanges = lines[0].Replace("seeds: ", "").Split(" ").Select(s => Int64.Parse(s)).ToList();
-            var seeds = new List<Tuple<Int64, Int64>>();
-            for (int i = 0; i < seedRanges.Count - 1; i += 2)
-            {
-                seeds.Add(new Tuple<long, long>(seedRanges[i], seedRanges[i + 1]));
-            }
-
-            //Seed To Soil map
-            var counter = 3;
-            var seedToSoil = new List<ItemRange>();
-            counter = ExtractData(lines, counter, seedToSoil);
-
-            counter += 2;
-            var soilToFertilizer = new List<ItemRange>();
-            counter = ExtractData(lines, counter, soilToFertilizer);
-
-            counter += 2;
-            var fertilizerToWater = new List<ItemRange>();
-            counter = ExtractData(lines, counter, fertilizerToWater);
-
-            counter += 2;
-            var waterToLight = new List<ItemRange>();
-            counter = ExtractData(lines, counter, waterToLight);
-
-            counter += 2;
-            var lightToTemp = new List<ItemRange>();
-            counter = ExtractData(lines, counter, lightToTemp);
-
-            counter += 2;
-            var tempToHumidity = new List<ItemRange>();
-            counter = ExtractData(lines, counter, tempToHumidity);
-
-            counter += 2;
-            var humidityToLocation = new List<ItemRange>();
-            counter = ExtractData(lines, counter, humidityToLocation);
-
-            var locationResult = Int64.MaxValue;
-
-            foreach (var seedPair in seeds)
-            {
-                
-                var location = CalculateRange(seedToSoil, soilToFertilizer, fertilizerToWater, waterToLight, lightToTemp, tempToHumidity, humidityToLocation, seedPair);
-                if (locationResult > location)
-                {
-                    locationResult = location;
-                }
-            }
-
-            Console.WriteLine(locationResult);
         }
 
         private static long CalculateRange(List<ItemRange> seedToSoil, List<ItemRange> soilToFertilizer, List<ItemRange> fertilizerToWater, List<ItemRange> waterToLight, List<ItemRange> lightToTemp, List<ItemRange> tempToHumidity, List<ItemRange> humidityToLocation, Tuple<long, long> seedPair)
